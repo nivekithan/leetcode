@@ -1,144 +1,89 @@
-pub fn search_range(nums: Vec<i32>, target: i32) -> Vec<i32> {
-    let indexes = binary_search(&nums[0..], target);
+#![allow(unused)]
 
-    match indexes {
-        (Some(l), Some(r)) => return vec![l as i32, r as i32],
-        (None, None) => return vec![-1, -1],
-        _ => unreachable!(),
-    };
+use std::collections::HashMap;
 
-    fn binary_search(slice: &[i32], target: i32) -> (Option<usize>, Option<usize>) {
-        if slice.len() == 0 {
-            return (None, None);
-        }
+#[derive(Default)]
+struct SudokoHashmap {
+    row_hashmap: [HashMap<char, bool>; 9],
+    col_hashmap: [HashMap<char, bool>; 9],
+    sqaure_hashmap: [HashMap<char, bool>; 9],
+}
 
-        if slice.len() == 1 {
-            if slice[0] == target {
-                return (Some(0), Some(0));
-            }
+impl SudokoHashmap {
+    fn insert(&mut self, loc: (usize, usize), value: char) {
+        let row = loc.0;
+        let col = loc.1;
 
-            return (None, None);
-        }
+        let squaure = match (((col / 3) + 1), ((row / 3) + 1)) {
+            (1, 1) => 0_usize,
+            (2, 1) => 1,
+            (3, 1) => 2,
+            (1, 2) => 3,
+            (2, 2) => 4,
+            (3, 2) => 5,
+            (1, 3) => 6,
+            (2, 3) => 7,
+            (3, 3) => 8,
 
-        let low: usize = 0;
-        let high = slice.len() - 1;
+            _ => unreachable!(),
+        };
 
-        let middle = find_middle(low, high);
-        let middle_value = slice[middle];
-
-        if middle_value == target {
-            let is_left_starting = middle == 0 || slice[middle - 1] != target;
-
-            let is_right_starting = middle == slice.len() - 1 || slice[middle + 1] != target;
-
-            println!(
-                "is_left_starting: {is_left_starting}, is_right_starting: {is_right_starting} "
-            );
-
-            if is_right_starting && is_left_starting {
-                return (Some(middle), Some(middle));
-            }
-
-            if is_left_starting && !is_right_starting {
-                let (_, right_index) =
-                    set_index(binary_search(&slice[middle + 1..], target), middle + 1);
-
-                match right_index {
-                    None => unreachable!(),
-                    Some(r) => return (Some(middle), Some(r)),
-                };
-            }
-
-            if !is_left_starting && is_right_starting {
-                let (left_index, _) = binary_search(&slice[0..middle], target);
-
-                println!("{left_index:?}");
-
-                match left_index {
-                    None => unreachable!(),
-                    Some(l) => return (Some(l), Some(middle)),
-                }
-            }
-
-            if !is_left_starting && !is_right_starting {
-                let (left_index, _) = binary_search(&slice[0..middle], target);
-                let (_, right_index) =
-                    set_index(binary_search(&slice[middle + 1..], target), middle + 1);
-
-                match (left_index, right_index) {
-                    (Some(l), Some(r)) => return (Some(l), Some(r)),
-                    _ => unreachable!(),
-                }
-            }
-
-            unreachable!();
-        }
-
-        if middle_value > target {
-            return binary_search(&slice[0..middle], target);
-        }
-
-        if middle_value < target {
-            return set_index(binary_search(&slice[middle + 1..], target), middle + 1);
-        }
-
-        unreachable!();
+        self.row_hashmap[row].insert(value, true);
+        self.col_hashmap[col].insert(value, true);
+        self.sqaure_hashmap[squaure].insert(value, true);
     }
 
-    fn find_middle(low: usize, high: usize) -> usize {
-        if (low + high) % 2 == 0 {
-            return (low + high) / 2;
-        }
+    fn has(&self, loc: (usize, usize), value: char) -> bool {
+        let row = loc.0;
+        let col = loc.1;
 
-        return (low + high + 1) / 2;
-    }
+        let squaure = match (((col / 3) + 1), ((row / 3) + 1)) {
+            (1, 1) => 0_usize,
+            (2, 1) => 1,
+            (3, 1) => 2,
+            (1, 2) => 3,
+            (2, 2) => 4,
+            (3, 2) => 5,
+            (1, 3) => 6,
+            (2, 3) => 7,
+            (3, 3) => 8,
 
-    fn set_index(
-        indexes: (Option<usize>, Option<usize>),
-        padding: usize,
-    ) -> (Option<usize>, Option<usize>) {
-        match indexes {
-            (Some(l), Some(r)) => return (Some(l + padding), Some(r + padding)),
-            (Some(l), None) => return (Some(l + padding), None),
-            (None, Some(r)) => return (None, Some(r + padding)),
-            (None, None) => return (None, None),
+            _ => unreachable!(),
+        };
+
+        match (
+            self.row_hashmap[row].contains_key(&value),
+            self.col_hashmap[col].contains_key(&value),
+            self.sqaure_hashmap[squaure].contains_key(&value),
+        ) {
+            (false, false, false) => return false,
+            _ => return true,
         };
     }
 }
 
-#[cfg(test)]
-mod test {
-    use crate::search_range;
+struct Solution {}
 
-    #[test]
-    fn test_1() {
-        let input = vec![5, 7, 7, 8, 8, 10];
-        let target = 8;
+impl Solution {
+    pub fn is_valid_sudoku(board: Vec<Vec<char>>) -> bool {
+        let mut sudoko_hashmap: SudokoHashmap = Default::default();
 
-        assert_eq!(search_range(input, target), vec![3, 4]);
-    }
+        for i in 0..9_usize {
+            for j in 0..9_usize {
+                let loc = (i, j);
+                let value = board[i][j];
 
-    #[test]
-    fn test_2() {
-        let input = vec![5, 7, 7, 8, 8, 10];
-        let target = 6;
+                if value == '.' {
+                    continue;
+                }
 
-        assert_eq!(search_range(input, target), vec![-1, -1]);
-    }
-
-    #[test]
-    fn test_3() {
-        let input = vec![];
-        let target = 0;
-
-        assert_eq!(search_range(input, target), vec![-1, -1]);
-    }
-
-    #[test]
-    fn test_4() {
-        let input = vec![2, 2];
-        let target = 2;
-
-        assert_eq!(search_range(input, target), vec![0, 1]);
+                if !sudoko_hashmap.has(loc, value) {
+                    sudoko_hashmap.insert(loc, value);
+                } else {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
