@@ -1,63 +1,81 @@
-#![allow(unused)]
+#![allow(dead_code)]
 
-use std::collections::HashMap;
+use std::cmp::Ordering;
 
-#[derive(Default)]
-struct SudokoHashmap {
-    row_hashmap: [HashMap<char, bool>; 9],
-    col_hashmap: [HashMap<char, bool>; 9],
-    sqaure_hashmap: [HashMap<char, bool>; 9],
+#[derive(Debug)]
+struct StateMachine {
+    candidates: Vec<i32>,
+    pub state: Vec<i32>,
+    constraint: i32,
+    cursor: usize,
+    sum: i32,
 }
 
-impl SudokoHashmap {
-    fn insert(&mut self, loc: (usize, usize), value: char) {
-        let row = loc.0;
-        let col = loc.1;
+impl StateMachine {
+    fn new(mut candidates: Vec<i32>) -> Self {
+        candidates.sort_unstable();
 
-        let squaure = match (((col / 3) + 1), ((row / 3) + 1)) {
-            (1, 1) => 0_usize,
-            (2, 1) => 1,
-            (3, 1) => 2,
-            (1, 2) => 3,
-            (2, 2) => 4,
-            (3, 2) => 5,
-            (1, 3) => 6,
-            (2, 3) => 7,
-            (3, 3) => 8,
-
-            _ => unreachable!(),
+        return Self {
+            candidates,
+            state: Vec::new(),
+            constraint: 0,
+            cursor: 0,
+            sum: 0,
         };
-
-        self.row_hashmap[row].insert(value, true);
-        self.col_hashmap[col].insert(value, true);
-        self.sqaure_hashmap[squaure].insert(value, true);
     }
 
-    fn has(&self, loc: (usize, usize), value: char) -> bool {
-        let row = loc.0;
-        let col = loc.1;
+    fn next(&mut self) -> Option<i32> {
+        while self.cursor < self.candidates.len() {
+            let value_under_cursor = self.candidates[self.cursor];
 
-        let squaure = match (((col / 3) + 1), ((row / 3) + 1)) {
-            (1, 1) => 0_usize,
-            (2, 1) => 1,
-            (3, 1) => 2,
-            (1, 2) => 3,
-            (2, 2) => 4,
-            (3, 2) => 5,
-            (1, 3) => 6,
-            (2, 3) => 7,
-            (3, 3) => 8,
+            if !(value_under_cursor > self.constraint) {
+                self.cursor += 1;
+                continue;
+            }
 
-            _ => unreachable!(),
-        };
+            self.state.push(value_under_cursor);
+            self.sum += value_under_cursor;
 
-        match (
-            self.row_hashmap[row].contains_key(&value),
-            self.col_hashmap[col].contains_key(&value),
-            self.sqaure_hashmap[squaure].contains_key(&value),
-        ) {
-            (false, false, false) => return false,
-            _ => return true,
+            return Some(self.sum);
+        }
+
+        return None;
+    }
+
+    fn backtrack(&mut self) -> Result<(), ()> {
+        let first_ele = self.state.pop();
+        let second_ele = self.state.pop();
+
+        match (first_ele, second_ele) {
+            (Some(f), Some(s)) => {
+                self.sum -= f + s;
+                self.constraint = s;
+                self.cursor = 0;
+                return Ok(());
+            }
+
+            (None, None) => Err(()),
+            (None, _) => unreachable!(),
+            (Some(f), None) => {
+                self.sum = 0;
+                self.constraint = f;
+                self.cursor = 0;
+                return Ok(());
+            }
+        }
+    }
+
+    fn backtrack_1(&mut self) -> Result<(), ()> {
+        let first_ele = self.state.pop();
+
+        match first_ele {
+            Some(f) => {
+                self.sum -= f;
+                self.constraint = f;
+                self.cursor = 0;
+                return Ok(());
+            }
+            None => return Err(()),
         };
     }
 }
@@ -65,25 +83,82 @@ impl SudokoHashmap {
 struct Solution {}
 
 impl Solution {
-    pub fn is_valid_sudoku(board: Vec<Vec<char>>) -> bool {
-        let mut sudoko_hashmap: SudokoHashmap = Default::default();
+    pub fn combination_sum(candidates: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
+        let mut output: Vec<Vec<i32>> = vec![];
+        let mut state_machine = StateMachine::new(candidates);
 
-        for i in 0..9_usize {
-            for j in 0..9_usize {
-                let loc = (i, j);
-                let value = board[i][j];
+        loop {
+            while let Some(sum) = state_machine.next() {
+                println!("Statemachine: {state_machine:?}");
+                match sum.cmp(&target) {
+                    Ordering::Less => continue,
+                    Ordering::Equal => {
+                        let solution = state_machine.state.iter().map(|v| *v).collect::<Vec<i32>>();
+                        output.push(solution);
+                        continue;
+                    }
+                    Ordering::Greater => {
+                        let res = state_machine.backtrack();
 
-                if value == '.' {
-                    continue;
-                }
-
-                if !sudoko_hashmap.has(loc, value) {
-                    sudoko_hashmap.insert(loc, value);
-                } else {
-                    return false;
+                        match res {
+                            Ok(_) => continue,
+                            Err(_) => break,
+                        };
+                    }
                 }
             }
+
+            match state_machine.backtrack_1() {
+                Err(_) => break,
+                Ok(_) => continue,
+            }
         }
-        return true;
+        return output;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Solution;
+
+    #[test]
+    fn test_1() {
+        let input = vec![2, 3, 6, 7];
+        let target = 7;
+
+        assert_eq!(
+            Solution::combination_sum(input, target),
+            vec![vec![2, 2, 3], vec![7]]
+        );
+    }
+
+    #[test]
+    fn test_2() {
+        let input = vec![2, 3, 5];
+        let target = 8;
+
+        assert_eq!(
+            Solution::combination_sum(input, target),
+            vec![vec![2, 2, 2, 2], vec![2, 3, 3], vec![3, 5]]
+        );
+    }
+
+    #[test]
+    fn test_3() {
+        let input = vec![2];
+        let target = 1;
+
+        assert_eq!(
+            Solution::combination_sum(input, target),
+            Vec::<Vec<i32>>::new()
+        );
+    }
+
+    #[test]
+    fn test_4() {
+        let input = vec![7, 3, 2];
+        let target = 18;
+
+        Solution::combination_sum(input, target);
     }
 }
