@@ -1,40 +1,29 @@
 struct Solution {}
 
 impl Solution {
-    fn combi(candidates: &[i32], cur_path: &mut Vec<i32>, output: &mut Vec<Vec<i32>>, target: i32) {
-        if target == 0 {
-            output.push(cur_path.clone());
-            return;
+    fn find_perumentation(items: &[i32], output: &mut Vec<Vec<i32>>, cur: &mut Vec<i32>) {
+        if items.len() == 0 {
+            output.push(cur.clone());
         }
 
-        for i in 0..candidates.len() {
-            let value = candidates[i];
+        for i in 0..items.len() {
+            let v = items[i];
 
-            if value > target {
-                break;
-            }
+            let mut new_array: Vec<i32> = Vec::new();
 
-            if i != 0 && value == candidates[i - 1] {
-                continue;
-            }
+            new_array.extend_from_slice(items);
+            new_array.remove(i);
 
-            cur_path.push(value);
-            Self::combi(
-                &candidates[i + 1..],
-                cur_path,
-                output,
-                target - candidates[i],
-            );
-            cur_path.pop();
+            cur.push(v);
+            Self::find_perumentation(&new_array[0..], output, cur);
+            cur.pop();
         }
     }
 
-    pub fn combination_sum2(mut candidates: Vec<i32>, target: i32) -> Vec<Vec<i32>> {
-        candidates.sort_unstable();
-
+    pub fn permute(nums: Vec<i32>) -> Vec<Vec<i32>> {
         let mut output: Vec<Vec<i32>> = Vec::new();
 
-        Self::combi(&candidates[0..], &mut Vec::new(), &mut output, target);
+        Self::find_perumentation(&nums[0..], &mut output, &mut vec![]);
 
         return output;
     }
@@ -46,12 +35,18 @@ mod test {
 
     #[test]
     fn test_1() {
-        let input = vec![10, 1, 2, 7, 6, 1, 5];
-        let target = 8;
+        let input = vec![1, 2, 3];
 
         assert_eq!(
-            Solution::combination_sum2(input, target),
-            vec![vec![1, 1, 6], vec![1, 2, 5], vec![1, 7], vec![2, 6]]
-        );
+            Solution::permute(input),
+            vec![
+                vec![1, 2, 3],
+                vec![1, 3, 2],
+                vec![2, 1, 3],
+                vec![2, 3, 1],
+                vec![3, 1, 2],
+                vec![3, 2, 1]
+            ]
+        )
     }
 }
