@@ -3,34 +3,49 @@
 struct Solution {}
 
 impl Solution {
-    fn permuate(items: &[i32], cur: &mut Vec<i32>, output: &mut Vec<Vec<i32>>) {
-        if items.len() == 0 {
-            output.push(cur.clone());
-            return;
-        }
+    fn find_subset(items: &[i32], cur: &mut Vec<i32>, output: &mut Vec<Vec<i32>>) {
+        output.push(cur.clone());
 
-        for i in 0..items.len() {
-            let value = items[i];
+        items.iter().enumerate().for_each(|(i, value)| {
+            let new_items = &items[i + 1..];
 
-            if i != 0 && value == items[i - 1] {
-                continue;
-            }
-
-            let mut new_items = Vec::new();
-
-            new_items.extend_from_slice(items);
-            new_items.remove(i);
-
-            cur.push(value);
-
-            Self::permuate(&new_items, cur, output);
+            cur.push(*value);
+            Self::find_subset(&new_items, cur, output);
             cur.pop();
-        }
+        });
     }
-    pub fn permute_unique(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
+
+    pub fn subsets(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
         nums.sort_unstable();
+
         let mut output = Vec::new();
-        Self::permuate(&nums, &mut vec![], &mut output);
+
+        Self::find_subset(&nums, &mut vec![], &mut output);
+
         return output;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Solution;
+
+    #[test]
+    fn test_1() {
+        let input = vec![1, 2, 3];
+
+        assert_eq!(
+            Solution::subsets(input),
+            vec![
+                vec![],
+                vec![1],
+                vec![1, 2],
+                vec![1, 2, 3],
+                vec![1, 3],
+                vec![2],
+                vec![2, 3],
+                vec![3],
+            ]
+        )
     }
 }
