@@ -3,24 +3,98 @@
 struct Solution {}
 
 impl Solution {
-    fn find_subset(items: &[i32], cur: &mut Vec<i32>, output: &mut Vec<Vec<i32>>) {
-        output.push(cur.clone());
+    fn continous_checker(
+        board: &[Vec<char>],
+        exists_checker: &mut [Vec<bool>],
+        pos: (usize, usize),
+        target: &str,
+    ) -> bool {
+        let i = pos.0;
+        let j = pos.1;
 
-        items.iter().enumerate().for_each(|(i, value)| {
-            let new_items = &items[i + 1..];
+        let max_i = board.len();
+        let max_j = board[0].len();
 
-            cur.push(*value);
-            Self::find_subset(&new_items, cur, output);
-            cur.pop();
-        });
+        let cur_char = board[i][j];
+
+        if cur_char == target.chars().next().unwrap() {
+            if target.len() == 1 {
+                return true;
+            }
+
+            exists_checker[i][j] = true;
+
+            for pos in Self::get_next_postions((i, j), (max_i, max_j), &exists_checker).iter() {
+                let i = pos.0;
+                let j = pos.1;
+
+                let is_exists =
+                    Self::continous_checker(board, exists_checker, (i, j), &target[1..]);
+
+                if is_exists {
+                    return true;
+                }
+            }
+
+            exists_checker[i][j] = false;
+        }
+        return false;
     }
 
-    pub fn subsets(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
-        nums.sort_unstable();
+    pub fn exist(board: Vec<Vec<char>>, word: String) -> bool {
+        let mut exists_checker = vec![vec![false; board[0].len()]; board.len()];
 
-        let mut output = Vec::new();
+        for i in 0..board.len() {
+            for j in 0..board[i].len() {
+                let is_exists = Self::continous_checker(&board, &mut exists_checker, (i, j), &word);
 
-        Self::find_subset(&nums, &mut vec![], &mut output);
+                if is_exists {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    fn get_next_postions(
+        cur_pos: (usize, usize),
+        max: (usize, usize),
+        exists_checker: &[Vec<bool>],
+    ) -> Vec<(usize, usize)> {
+        let mut output: Vec<(usize, usize)> = vec![];
+
+        if cur_pos.1 != 0 {
+            let new_pos = (cur_pos.0, cur_pos.1 - 1);
+
+            if !exists_checker[new_pos.0][new_pos.1] {
+                output.push(new_pos);
+            }
+        }
+
+        if cur_pos.0 + 1 < max.0 {
+            let new_pos = (cur_pos.0 + 1, cur_pos.1);
+
+            if !exists_checker[new_pos.0][new_pos.1] {
+                output.push(new_pos);
+            }
+        }
+
+        if cur_pos.1 + 1 < max.1 {
+            let new_pos = (cur_pos.0, cur_pos.1 + 1);
+
+            if !exists_checker[new_pos.0][new_pos.1] {
+                output.push(new_pos);
+            }
+        }
+
+        if cur_pos.0 != 0 {
+            let new_pos = (cur_pos.0 - 1, cur_pos.1);
+
+            if !exists_checker[new_pos.0][new_pos.1] {
+                output.push(new_pos);
+            }
+        }
 
         return output;
     }
@@ -32,20 +106,40 @@ mod test {
 
     #[test]
     fn test_1() {
-        let input = vec![1, 2, 3];
+        let input = vec![
+            vec!['A', 'B', 'C', 'E'],
+            vec!['S', 'F', 'C', 'S'],
+            vec!['A', 'D', 'E', 'E'],
+        ];
 
-        assert_eq!(
-            Solution::subsets(input),
-            vec![
-                vec![],
-                vec![1],
-                vec![1, 2],
-                vec![1, 2, 3],
-                vec![1, 3],
-                vec![2],
-                vec![2, 3],
-                vec![3],
-            ]
-        )
+        let target = "ABCCED";
+
+        assert_eq!(Solution::exist(input, target.to_string()), true);
+    }
+
+    #[test]
+    fn test_2() {
+        let input = vec![
+            vec!['A', 'B', 'C', 'E'],
+            vec!['S', 'F', 'C', 'S'],
+            vec!['A', 'D', 'E', 'E'],
+        ];
+
+        let target = "SEE";
+
+        assert_eq!(Solution::exist(input, target.to_string()), true);
+    }
+
+    #[test]
+    fn test_3() {
+        let input = vec![
+            vec!['A', 'B', 'C', 'E'],
+            vec!['S', 'F', 'C', 'S'],
+            vec!['A', 'D', 'E', 'E'],
+        ];
+
+        let target = "ABCB";
+
+        assert_eq!(Solution::exist(input, target.to_string()), false);
     }
 }
