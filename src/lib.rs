@@ -2,43 +2,33 @@
 
 struct Solution {}
 
-struct Window {
-    pub left: usize,
-    pub right: usize,
-}
-
 impl Solution {
-    pub fn can_jump(nums: Vec<i32>) -> bool {
-        let mut window = Window { left: 0, right: 0 };
+    pub fn max_profit(prices: Vec<i32>) -> i32 {
+        let mut profit = 0;
 
-        while window.right < nums.len() - 1 {
-            let mut furthest = 0;
-            for i in window.left..(window.right + 1) {
-                furthest = furthest.max(i + nums[i] as usize);
+        for i in 0..(prices.len() - 1) {
+            let cur_day_price = prices[i];
+            let next_day_price = prices.get(i + 1);
+
+            if let Some(next_day_price) = next_day_price {
+                if *next_day_price > cur_day_price {
+                    profit += *next_day_price - cur_day_price;
+                }
             }
-
-            if furthest <= window.right {
-                return false;
-            }
-
-            window.left = window.right + 1;
-            window.right = furthest;
         }
-
-        return true;
+        return profit;
     }
 }
-
 #[cfg(test)]
 mod test {
     use crate::Solution;
 
     #[test]
     fn test_1() {
-        let input = vec![2, 3, 1, 1, 4];
+        assert_eq!(Solution::max_profit(vec![7, 1, 5, 3, 6, 4]), 7);
 
-        assert_eq!(Solution::can_jump(input), true);
+        assert_eq!(Solution::max_profit(vec![1, 2, 3, 4, 5]), 4);
 
-        assert_eq!(Solution::can_jump(vec![3, 2, 1, 0, 4]), false);
+        assert_eq!(Solution::max_profit(vec![7, 6, 4, 3, 1]), 0);
     }
 }
