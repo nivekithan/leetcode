@@ -8,22 +8,24 @@ struct Window {
 }
 
 impl Solution {
-    pub fn jump(nums: Vec<i32>) -> i32 {
-        let mut steps = 0;
-
+    pub fn can_jump(nums: Vec<i32>) -> bool {
         let mut window = Window { left: 0, right: 0 };
 
         while window.right < nums.len() - 1 {
             let mut furthest = 0;
             for i in window.left..(window.right + 1) {
-                furthest = furthest.max(nums[i] + i as i32);
+                furthest = furthest.max(i + nums[i] as usize);
             }
+
+            if furthest <= window.right {
+                return false;
+            }
+
             window.left = window.right + 1;
-            window.right = furthest as usize;
-            steps += 1;
+            window.right = furthest;
         }
 
-        return steps;
+        return true;
     }
 }
 
@@ -35,14 +37,8 @@ mod test {
     fn test_1() {
         let input = vec![2, 3, 1, 1, 4];
 
-        assert_eq!(Solution::jump(input), 2);
+        assert_eq!(Solution::can_jump(input), true);
 
-        let input = vec![2, 3, 0, 1, 4];
-
-        assert_eq!(Solution::jump(input), 2);
-
-        let input = vec![9, 8, 2, 2, 0, 2, 2, 0, 4, 1, 5, 7, 9, 6, 6, 0, 6, 5, 0, 5];
-
-        assert_eq!(Solution::jump(input), 3);
+        assert_eq!(Solution::can_jump(vec![3, 2, 1, 0, 4]), false);
     }
 }
