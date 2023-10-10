@@ -1,34 +1,43 @@
 #![allow(dead_code)]
 
+use std::cmp::Ordering;
+
 struct Solution {}
 
 impl Solution {
-    pub fn max_profit(prices: Vec<i32>) -> i32 {
-        let mut profit = 0;
+    pub fn can_complete_circuit(gas: Vec<i32>, cost: Vec<i32>) -> i32 {
+        let mut total_gas = 0;
+        let mut prefix_gas = 0;
 
-        for i in 0..(prices.len() - 1) {
-            let cur_day_price = prices[i];
-            let next_day_price = prices.get(i + 1);
+        let mut start = 0;
 
-            if let Some(next_day_price) = next_day_price {
-                if *next_day_price > cur_day_price {
-                    profit += *next_day_price - cur_day_price;
-                }
+        for i in 0..gas.len() {
+            let cost = gas[i] - cost[i];
+            total_gas += cost;
+            prefix_gas += cost;
+
+            if prefix_gas < 0 {
+                start = i + 1;
+                prefix_gas = 0;
             }
         }
-        return profit;
+
+        match total_gas.cmp(&0) {
+            Ordering::Less => return -1,
+            _ => return start as i32,
+        };
     }
 }
+
 #[cfg(test)]
 mod test {
     use crate::Solution;
 
     #[test]
-    fn test_1() {
-        assert_eq!(Solution::max_profit(vec![7, 1, 5, 3, 6, 4]), 7);
-
-        assert_eq!(Solution::max_profit(vec![1, 2, 3, 4, 5]), 4);
-
-        assert_eq!(Solution::max_profit(vec![7, 6, 4, 3, 1]), 0);
+    fn test() {
+        assert_eq!(
+            Solution::can_complete_circuit(vec![1, 4, 2, 3, 5], vec![3, 1, 4, 5, 2]),
+            4
+        );
     }
 }
