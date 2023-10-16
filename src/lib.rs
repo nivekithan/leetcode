@@ -3,37 +3,34 @@
 struct Solution {}
 
 impl Solution {
-    pub fn generate(num_rows: i32) -> Vec<Vec<i32>> {
-        let num_rows = num_rows as usize;
+    pub fn max_sub_array(nums: Vec<i32>) -> i32 {
+        let mut max_sum = i32::MIN;
+        let mut sum = 0;
 
-        let mut output: Vec<Vec<i32>> = Vec::new();
+        for i in 0..nums.len() {
+            let value = nums[i];
+            sum += value;
 
-        for row_length in 1..(num_rows + 1) {
-            if row_length == 1 {
-                output.push(vec![1]);
-                continue;
+            max_sum = max_sum.max(sum);
+
+            if sum < 0 {
+                sum = 0;
             }
-
-            let last_vector = output.last().unwrap();
-
-            let mut new_vector: Vec<i32> = Vec::new();
-            for i in 0..row_length {
-                if i == 0 {
-                    new_vector.push(1);
-                    continue;
-                }
-
-                if i == row_length - 1 {
-                    new_vector.push(1);
-                    continue;
-                }
-
-                let value = last_vector[i - 1] + last_vector[i];
-                new_vector.push(value);
-            }
-            output.push(new_vector);
         }
 
-        return output;
+        return max_sum;
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::Solution;
+
+    #[test]
+    fn test() {
+        assert_eq!(
+            Solution::max_sub_array(vec![-2, 1, -3, 4, -1, 2, 1, -5, 4]),
+            6
+        );
     }
 }
