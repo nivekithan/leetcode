@@ -3,22 +3,29 @@
 struct Solution {}
 
 impl Solution {
-    pub fn max_sub_array(nums: Vec<i32>) -> i32 {
-        let mut max_sum = i32::MIN;
-        let mut sum = 0;
+    pub fn sort_colors(nums: &mut Vec<i32>) {
+        let (mut i, mut j, mut k) = (0_usize, 0_usize, nums.len() - 1);
 
-        for i in 0..nums.len() {
-            let value = nums[i];
-            sum += value;
+        while j <= k {
+            match nums[j] {
+                0 => {
+                    nums.swap(i, j);
+                    i += 1;
+                    j += 1;
+                }
+                2 => {
+                    nums.swap(k, j);
+                    if k == usize::MIN {
+                        break;
+                    }
 
-            max_sum = max_sum.max(sum);
-
-            if sum < 0 {
-                sum = 0;
+                    k -= 1;
+                }
+                _ => {
+                    j += 1;
+                }
             }
         }
-
-        return max_sum;
     }
 }
 
@@ -28,9 +35,9 @@ mod test {
 
     #[test]
     fn test() {
-        assert_eq!(
-            Solution::max_sub_array(vec![-2, 1, -3, 4, -1, 2, 1, -5, 4]),
-            6
-        );
+        let mut input = vec![2, 0, 2, 1, 1, 0];
+        Solution::sort_colors(&mut input);
+
+        assert_eq!(input, vec![0, 0, 1, 1, 2, 2]);
     }
 }
